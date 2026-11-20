@@ -16,4 +16,10 @@ public final class Validation {
             throw new IllegalArgumentException(name + " must be positive: " + value);
         }
     }
+
+    public static void requireTrue(boolean condition, String message) {
+        if (!condition) {
+            throw new IllegalArgumentException(message);
+        }
+    }
 }
