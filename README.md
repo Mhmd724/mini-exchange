@@ -23,7 +23,7 @@ mvn test
 
 ## Roadmap
 - [x] Project setup (Maven, JUnit 5, PostgreSQL driver)
-- [ ] Domain model: Order, Trade, OrderBook
+- [x] Domain model: Order, Trade, OrderBook
 - [ ] Matching engine (full and partial fills, cancel)
 - [ ] TCP server with multiple clients
 - [ ] Thread safety under load
