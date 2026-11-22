@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class OrderBookTest {
 
@@ -67,5 +68,77 @@ class OrderBookTest {
         book.add(order);
 
         assertTrue(book.bestAsk().isEmpty());
+    }
+
+    @Test
+    void removeBestBidRemovesTheBestOne() {
+        OrderBook book = new OrderBook();
+
+        Order lower = new Order(1, Side.BUY, 100, 15000);
+        Order higher = new Order(2, Side.BUY, 100, 15100);
+
+        book.add(lower);
+        book.add(higher);
+        
+        assertEquals(higher, book.bestBid().orElseThrow());     //  guard
+        book.removeBestBid();
+
+        assertEquals(lower, book.bestBid().orElseThrow());      //  result
+    }
+
+    //  "After the only order at the best price is removed, bestAsk() returns the next price's order (and doesn't crash)."
+    @Test
+    void removingLastOrderAtPriceExposesNextLevel() {
+        OrderBook book = new OrderBook();
+
+        Order cheaper = new Order(1, Side.SELL, 100, 15000);
+        Order pricier = new Order(2, Side.SELL, 100, 15100);
+
+        book.add(pricier);
+        book.add(cheaper);
+        
+        assertEquals(cheaper, book.bestAsk().orElseThrow());     //  guard
+        book.removeBestAsk();
+
+        assertEquals(pricier, book.bestAsk().orElseThrow());      //  result
+    }
+
+    @Test
+    void removeKeepsTimePriority() {
+        OrderBook book = new OrderBook();
+
+        Order first = new Order(1, Side.SELL, 100, 15000);
+        Order second = new Order(2, Side.SELL, 100, 15000);
+
+        book.add(first);
+        book.add(second);
+        
+        assertEquals(first, book.bestAsk().orElseThrow());     //  guard
+        book.removeBestAsk();
+
+        assertEquals(second, book.bestAsk().orElseThrow());      //  result
+    }
+
+    @Test
+    void removingTheOnlyOrderEmptiesTheSide() {
+        OrderBook book = new OrderBook();
+
+        Order sell = new Order(1, Side.SELL, 100, 15000);
+        Order buy = new Order(2, Side.BUY, 100, 15000);
+
+        book.add(sell);
+        book.add(buy);
+        book.removeBestAsk();
+        book.removeBestBid();
+        assertTrue(book.bestAsk().isEmpty());
+        assertTrue(book.bestBid().isEmpty());
+    }
+
+    @Test
+    void removingFromEmptySideFails() {
+        OrderBook book = new OrderBook();
+
+        assertThrows(IllegalStateException.class, () -> book.removeBestBid());
+        assertThrows(IllegalStateException.class, () -> book.removeBestAsk());
     }
 }

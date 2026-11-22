@@ -8,6 +8,13 @@ public class OrderBook {
     private final BookSide bids = new BookSide(Comparator.reverseOrder());
     private final BookSide asks = new BookSide(Comparator.naturalOrder());
 
+    private BookSide sideFor(Side side) {
+        return (switch (side) {
+            case BUY -> bids;
+            case SELL -> asks;
+        });
+    }
+
     public void add(Order order) {
         sideFor(order.side()).add(order);
     }
@@ -20,10 +27,11 @@ public class OrderBook {
         return (asks.best());
     }
 
-    private BookSide sideFor(Side side) {
-        return (switch (side) {
-            case BUY -> bids;
-            case SELL -> asks;
-        });
+    public void removeBestBid() {
+        bids.removeBest();
+    }
+
+    public void removeBestAsk() {
+        asks.removeBest();
     }
 }
