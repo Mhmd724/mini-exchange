@@ -106,4 +106,84 @@ class MatchingEngineTest {
         assertEquals(firstSell, book.bestAsk().orElseThrow());
         assertEquals(buy, book.bestBid().orElseThrow());
     }
+
+    @Test
+    void incomingSmallerPartiallyFillsResting() {
+        Order sell = new Order(1, Side.SELL, 100, 15000);
+        Order buy = new Order(2, Side.BUY, 40, 15000);
+
+        engine.submit(sell);
+
+        List<Trade> trades = engine.submit(buy);
+
+        assertEquals(List.of(new Trade(2, 1, 40, 15000, NOW)), trades);
+        assertEquals(new Order(1, Side.SELL, 60, 15000), book.bestAsk().orElseThrow());
+        assertTrue(book.bestBid().isEmpty());
+    }
+
+    @Test
+    void incomingLargerRestsRemainder() {
+        Order sell = new Order(1, Side.SELL, 100, 15000);
+        Order buy = new Order(2, Side.BUY, 150, 15000);
+
+        engine.submit(sell);
+
+        List<Trade> trades = engine.submit(buy);
+
+        assertEquals(List.of(new Trade(2, 1, 100, 15000, NOW)), trades);
+        assertTrue(book.bestAsk().isEmpty());
+        assertEquals(new Order(2, Side.BUY, 50, 15000), book.bestBid().orElseThrow());
+    }
+
+    @Test
+    void incomingSweepsMultipleLevels() {
+        Order cheaper = new Order(1, Side.SELL, 60, 15000);
+        Order pricier = new Order(2, Side.SELL, 40, 15100);
+        Order buy = new Order(3, Side.BUY, 100, 15100);
+
+        engine.submit(cheaper);
+        engine.submit(pricier);
+
+        List<Trade> trades = engine.submit(buy);
+
+        assertEquals(List.of(
+                new Trade(3, 1, 60, 15000, NOW),
+                new Trade(3, 2, 40, 15100, NOW)), trades);
+        assertTrue(book.bestAsk().isEmpty());
+        assertTrue(book.bestBid().isEmpty());
+    }
+
+    @Test
+    void sweepStopsAtLimitPrice() {
+        Order cheaper = new Order(1, Side.SELL, 60, 15000);
+        Order tooExpensive = new Order(2, Side.SELL, 40, 15200);
+        Order buy = new Order(3, Side.BUY, 100, 15100);
+
+        engine.submit(cheaper);
+        engine.submit(tooExpensive);
+
+        List<Trade> trades = engine.submit(buy);
+
+        assertEquals(List.of(new Trade(3, 1, 60, 15000, NOW)), trades);
+        assertEquals(tooExpensive, book.bestAsk().orElseThrow());
+        assertEquals(new Order(3, Side.BUY, 40, 15100), book.bestBid().orElseThrow());
+    }
+
+    @Test
+    void sameLevelFillsInTimeOrder() {
+        Order first = new Order(1, Side.SELL, 50, 15000);
+        Order second = new Order(2, Side.SELL, 50, 15000);
+        Order buy = new Order(3, Side.BUY, 70, 15000);
+
+        engine.submit(first);
+        engine.submit(second);
+
+        List<Trade> trades = engine.submit(buy);
+
+        assertEquals(List.of(
+                new Trade(3, 1, 50, 15000, NOW),
+                new Trade(3, 2, 20, 15000, NOW)), trades);
+        assertEquals(new Order(2, Side.SELL, 30, 15000), book.bestAsk().orElseThrow());
+        assertTrue(book.bestBid().isEmpty());
+    }
 }

@@ -7,6 +7,7 @@ import com.moharajli.miniexchange.domain.Side;
 import com.moharajli.miniexchange.common.Validation;
 
 import java.util.Optional;
+import java.util.ArrayList;
 import java.util.List;
 import java.time.Clock;
 
@@ -23,17 +24,25 @@ public class MatchingEngine {
     }
 
     public List<Trade> submit(Order incoming) {
-        Optional<Order> resting = bestOpposite(incoming.side());
+        long remaining = incoming.quantity();
+        List<Trade> trades = new ArrayList<>();
 
-        if (resting.isPresent() && crosses(incoming, resting.get()))
-        {
-            Trade trade = createTrade(incoming, resting.get());
-            removeBestOpposite(incoming.side());
-            return (List.of(trade));
+        while (remaining > 0) {
+            Optional<Order> resting = bestOpposite(incoming.side());
+            if (resting.isEmpty() || !crosses(incoming, resting.get())) {
+                break ;
+            }
+
+            long quantity = Math.min(remaining, resting.get().quantity());
+            trades.add(createTrade(incoming, resting.get(), quantity));
+            fillBestOpposite(incoming.side(), quantity);
+            remaining -= quantity;
         }
 
-        book.add(incoming);
-        return (List.of());
+        if (remaining > 0) {
+            book.add(incoming.withQuantity(remaining));      // the leftover rests
+        }
+        return (trades);
     }
 
     private Optional<Order> bestOpposite(Side side) {
@@ -50,18 +59,16 @@ public class MatchingEngine {
         });
     }
 
-    private void removeBestOpposite(Side side) {
+    private void fillBestOpposite(Side side, long quantity) {
         switch (side) {
-            case BUY -> book.removeBestAsk();
-            case SELL -> book.removeBestBid();
+            case BUY -> book.fillBestAsk(quantity);
+            case SELL -> book.fillBestBid(quantity);
         }
     }
 
-    private Trade createTrade(Order incoming, Order resting) {
+    private Trade createTrade(Order incoming, Order resting, long quantity) {
         Order buyer = incoming.side() == Side.BUY ? incoming : resting;
         Order seller = incoming.side() == Side.SELL ? incoming : resting;
-
-        long quantity = Math.min(incoming.quantity(), resting.quantity());
 
         return (new Trade(buyer.id(), seller.id(), quantity, resting.price(), clock.instant()));
     }
