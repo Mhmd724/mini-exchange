@@ -129,4 +129,53 @@ class OrderBookTest {
         assertThrows(IllegalStateException.class, () -> book.removeBestBid());
         assertThrows(IllegalStateException.class, () -> book.removeBestAsk());
     }
+
+    @Test
+    void partialFillReducesBestOrder() {
+        Order buy = new Order(1, Side.BUY, 100, 15000);
+
+        book.add(buy);
+
+        book.fillBestBid(60);
+        assertEquals(new Order(1, Side.BUY, 40, 15000), book.bestBid().orElseThrow());
+    }
+
+    @Test
+    void partialFillKeepsTimePriority() {
+        Order first = new Order(1, Side.BUY, 100, 15000);
+        Order second = new Order(2, Side.BUY, 100, 15000);
+
+        book.add(first);
+        book.add(second);
+
+        book.fillBestBid(60);
+        assertEquals(new Order(1, Side.BUY, 40, 15000), book.bestBid().orElseThrow());
+    }
+
+    @Test
+    void fullFillRemovesOrder() {
+        Order first = new Order(1, Side.BUY, 100, 15000);
+        Order second = new Order(2, Side.BUY, 100, 14900);
+
+        book.add(first);
+        book.add(second);
+
+        book.fillBestBid(100);
+        assertEquals(second, book.bestBid().orElseThrow());
+    }
+
+    @Test
+    void fillMoreThanBestFails() {
+        Order buy = new Order(1, Side.BUY, 100, 15000);
+
+        book.add(buy);
+
+        assertThrows(IllegalArgumentException.class, () -> book.fillBestBid(150));
+        assertEquals(buy, book.bestBid().orElseThrow());
+    }
+
+    @Test
+    void fillOnEmptySideFails() {
+        assertThrows(IllegalStateException.class, () -> book.fillBestBid(10));
+    }
 }
