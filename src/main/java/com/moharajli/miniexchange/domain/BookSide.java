@@ -30,7 +30,7 @@ class BookSide {
         return (Optional.of(levels.firstEntry().getValue().peekFirst()));
     }
 
-    void removeBest() {
+    private void removeBest() {
         Map.Entry<Long, Deque<Order>> level = bestLevel("remove");
         Deque<Order> queue = level.getValue();
 

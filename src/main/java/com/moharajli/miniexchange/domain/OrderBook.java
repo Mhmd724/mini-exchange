@@ -20,14 +20,6 @@ public class OrderBook {
         return (asks.best());
     }
 
-    public void removeBestBid() {
-        bids.removeBest();
-    }
-
-    public void removeBestAsk() {
-        asks.removeBest();
-    }
-
     public void fillBestBid(long quantity) {
         bids.fillBest(quantity);
     }
