@@ -10,4 +10,8 @@ public record Order(long id, Side side, long quantity, long price) {
         Validation.requirePositive(quantity, "Quantity");
         Validation.requirePositive(price, "Price");
     }
+
+    public Order withQuantity(long newQuantity) {
+        return (new Order(this.id, this.side, newQuantity, this.price));
+    }
 }

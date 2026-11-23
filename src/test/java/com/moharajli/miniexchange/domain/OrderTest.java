@@ -31,4 +31,20 @@ class OrderTest {
     void rejectsNullSide() {
         assertThrows(IllegalArgumentException.class, () -> new Order(1, null, 100, 15000));
     }
+
+    @Test
+    void withQuantityReturnsCopyWithNewQuantity() {
+        Order order = new Order(1, Side.BUY, 100, 15000);
+
+        Order reduced = order.withQuantity(60);
+
+        assertEquals(new Order(1, Side.BUY, 60, 15000), reduced);   // original's copy
+        assertEquals(new Order(1, Side.BUY, 100, 15000), order);    // original unchanged
+    }
+
+    @Test
+    void withQuantityRejectsZero() {
+        Order order = new Order(1, Side.BUY, 100, 15000);
+        assertThrows(IllegalArgumentException.class, () -> order.withQuantity(0));
+    }
 }
