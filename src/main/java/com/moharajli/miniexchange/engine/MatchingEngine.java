@@ -2,6 +2,7 @@ package com.moharajli.miniexchange.engine;
 
 import com.moharajli.miniexchange.domain.Trade;
 import com.moharajli.miniexchange.domain.OrderBook;
+import com.moharajli.miniexchange.domain.BookDepth;
 import com.moharajli.miniexchange.domain.Order;
 import com.moharajli.miniexchange.domain.Side;
 import com.moharajli.miniexchange.common.Validation;
@@ -46,7 +47,11 @@ public class MatchingEngine {
     }
 
     public Optional<Order> cancel(long id) {
-        return book.cancel(id);                 // the book owns its data; the engine only routes
+        return (book.cancel(id));                 // the book owns its data; the engine only routes
+    }
+
+    public BookDepth depth() {
+        return (book.depth());
     }
 
     private Optional<Order> bestOpposite(Side side) {

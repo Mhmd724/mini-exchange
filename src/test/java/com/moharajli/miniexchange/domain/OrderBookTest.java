@@ -3,6 +3,7 @@ package com.moharajli.miniexchange.domain;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -235,5 +236,31 @@ class OrderBookTest {
         book.cancel(1);
 
         assertTrue(book.cancel(1).isEmpty());
+    }
+
+    @Test
+    void depthOfEmptyBookIsEmpty() {
+        assertEquals(new BookDepth(List.of(), List.of()), book.depth());
+    }
+
+    @Test
+    void depthSumsQuantitiesPerLevel() {
+        book.add(new Order(1, Side.BUY, 100, 15000));
+        book.add(new Order(2, Side.BUY, 50, 15000));
+
+        assertEquals(List.of(new PriceLevel(15000, 150)), book.depth().bids());
+    }
+
+    @Test
+    void depthListsLevelsBestFirst() {
+        book.add(new Order(1, Side.BUY, 80, 14900));
+        book.add(new Order(2, Side.BUY, 100, 15000));
+        book.add(new Order(3, Side.SELL, 30, 15200));
+        book.add(new Order(4, Side.SELL, 50, 15100));
+
+        BookDepth depth = book.depth();
+
+        assertEquals(List.of(new PriceLevel(15000, 100), new PriceLevel(14900, 80)), depth.bids());
+        assertEquals(List.of(new PriceLevel(15100, 50), new PriceLevel(15200, 30)), depth.asks());
     }
 }

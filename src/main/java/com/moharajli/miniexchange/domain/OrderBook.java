@@ -32,6 +32,10 @@ public class OrderBook {
         return (bids.cancel(id).or(() -> asks.cancel(id)));
     }
 
+    public BookDepth depth() {
+        return new BookDepth(bids.depth(), asks.depth());
+    }
+
     private BookSide sideFor(Side side) {
         return (switch (side) {
             case BUY -> bids;

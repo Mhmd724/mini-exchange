@@ -3,10 +3,12 @@ package com.moharajli.miniexchange.domain;
 import com.moharajli.miniexchange.common.Validation;
 
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Optional;
@@ -52,7 +54,7 @@ class BookSide {
     Optional<Order> cancel(long id) {
         Long price = priceById.get(id);
         if (price == null) {
-            return Optional.empty();
+            return (Optional.empty());
         }
 
         Deque<Order> queue = levels.get(price);
@@ -65,10 +67,22 @@ class BookSide {
                     levels.remove(price);
                 }
                 priceById.remove(id);
-                return Optional.of(order);
+                return (Optional.of(order));
             }
         }
-        return Optional.empty();
+        return (Optional.empty());
+    }
+
+    List<PriceLevel> depth() {
+        List<PriceLevel> depth = new ArrayList<>();
+        for (Map.Entry<Long, Deque<Order>> level : levels.entrySet()) {
+            long total = 0;
+            for (Order order : level.getValue()) {
+                total += order.quantity();
+            }
+            depth.add(new PriceLevel(level.getKey(), total));
+        }
+        return (depth);
     }
 
     private void removeBest() {
@@ -87,6 +101,6 @@ class BookSide {
         if (levels.isEmpty()) {
             throw new IllegalStateException("no order to " + action);
         }
-        return levels.firstEntry();
+        return (levels.firstEntry());
     }
 }
