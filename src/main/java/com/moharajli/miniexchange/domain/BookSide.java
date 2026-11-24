@@ -2,17 +2,20 @@ package com.moharajli.miniexchange.domain;
 
 import com.moharajli.miniexchange.common.Validation;
 
+import java.util.ArrayDeque;
+import java.util.Comparator;
 import java.util.Deque;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.TreeMap;
-import java.util.ArrayDeque;
-import java.util.Comparator;
-import java.util.Map;
 
 class BookSide {
-    
+
     private final NavigableMap<Long, Deque<Order>> levels;
+    private final Map<Long, Long> priceById = new HashMap<>();
 
     BookSide(Comparator<Long> priceOrder) {
         levels = new TreeMap<>(priceOrder);
@@ -21,6 +24,7 @@ class BookSide {
     void add(Order order) {
         Deque<Order> queue = levels.computeIfAbsent(order.price(), price -> new ArrayDeque<>());
         queue.addLast(order);
+        priceById.put(order.id(), order.price());
     }
 
     Optional<Order> best() {
@@ -28,17 +32,6 @@ class BookSide {
             return (Optional.empty());
         }
         return (Optional.of(levels.firstEntry().getValue().peekFirst()));
-    }
-
-    private void removeBest() {
-        Map.Entry<Long, Deque<Order>> level = bestLevel("remove");
-        Deque<Order> queue = level.getValue();
-
-        queue.pollFirst();
-
-        if (queue.isEmpty()) {
-            levels.remove(level.getKey());
-        }
     }
 
     void fillBest(long quantity) {
@@ -53,6 +46,40 @@ class BookSide {
         } else {
             queue.pollFirst();
             queue.addFirst(front.withQuantity(front.quantity() - quantity));
+        }
+    }
+
+    Optional<Order> cancel(long id) {
+        Long price = priceById.get(id);
+        if (price == null) {
+            return Optional.empty();
+        }
+
+        Deque<Order> queue = levels.get(price);
+        Iterator<Order> it = queue.iterator();
+        while (it.hasNext()) {
+            Order order = it.next();
+            if (order.id() == id) {
+                it.remove();
+                if (queue.isEmpty()) {
+                    levels.remove(price);
+                }
+                priceById.remove(id);
+                return Optional.of(order);
+            }
+        }
+        return Optional.empty();
+    }
+
+    private void removeBest() {
+        Map.Entry<Long, Deque<Order>> level = bestLevel("remove");
+        Deque<Order> queue = level.getValue();
+
+        Order removed = queue.pollFirst();
+        priceById.remove(removed.id());
+
+        if (queue.isEmpty()) {
+            levels.remove(level.getKey());
         }
     }
 

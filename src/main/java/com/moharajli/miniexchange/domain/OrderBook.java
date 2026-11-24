@@ -28,6 +28,10 @@ public class OrderBook {
         asks.fillBest(quantity);
     }
 
+    public Optional<Order> cancel(long id) {
+        return (bids.cancel(id).or(() -> asks.cancel(id)));
+    }
+
     private BookSide sideFor(Side side) {
         return (switch (side) {
             case BUY -> bids;

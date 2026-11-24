@@ -3,6 +3,8 @@ package com.moharajli.miniexchange.domain;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.Optional;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -161,5 +163,77 @@ class OrderBookTest {
 
         assertThrows(IllegalArgumentException.class, () -> book.fillBestBid(150));
         assertEquals(buy, book.bestBid().orElseThrow());
+    }
+
+        @Test
+    void cancelRemovesRestingOrder() {
+        Order buy = new Order(1, Side.BUY, 100, 15000);
+        book.add(buy);
+
+        Optional<Order> cancelled = book.cancel(1);
+
+        assertEquals(Optional.of(buy), cancelled);
+        assertTrue(book.bestBid().isEmpty());
+    }
+
+    @Test
+    void cancelUnknownIdReturnsEmpty() {
+        assertTrue(book.cancel(99).isEmpty());
+    }
+
+    @Test
+    void cancelMiddleOrderKeepsQueueOrder() {
+        Order first = new Order(1, Side.BUY, 100, 15000);
+        Order second = new Order(2, Side.BUY, 100, 15000);
+        Order third = new Order(3, Side.BUY, 100, 15000);
+        book.add(first);
+        book.add(second);
+        book.add(third);
+
+        book.cancel(2);
+
+        assertEquals(first, book.bestBid().orElseThrow());      //  #1 still first
+        book.fillBestBid(100);
+        assertEquals(third, book.bestBid().orElseThrow());      //  #2 is gone, #3 is next
+    }
+
+    @Test
+    void cancelLastOrderAtPriceRemovesLevel() {
+        Order cheaper = new Order(1, Side.SELL, 100, 15000);
+        Order pricier = new Order(2, Side.SELL, 100, 15100);
+        book.add(cheaper);
+        book.add(pricier);
+
+        book.cancel(1);
+
+        assertEquals(pricier, book.bestAsk().orElseThrow());
+    }
+
+    @Test
+    void cancelAfterPartialFillReturnsRemaining() {
+        book.add(new Order(1, Side.BUY, 100, 15000));
+        book.fillBestBid(40);
+
+        Optional<Order> cancelled = book.cancel(1);
+
+        assertEquals(Optional.of(new Order(1, Side.BUY, 60, 15000)), cancelled);
+        assertTrue(book.bestBid().isEmpty());
+    }
+
+    @Test
+    void cancelAfterFullFillReturnsEmpty() {
+        book.add(new Order(1, Side.BUY, 100, 15000));
+        book.fillBestBid(100);
+
+        assertTrue(book.cancel(1).isEmpty());
+    }
+
+    @Test
+    void cancelTwiceReturnsEmptySecondTime() {
+        book.add(new Order(1, Side.BUY, 100, 15000));
+
+        book.cancel(1);
+
+        assertTrue(book.cancel(1).isEmpty());
     }
 }
