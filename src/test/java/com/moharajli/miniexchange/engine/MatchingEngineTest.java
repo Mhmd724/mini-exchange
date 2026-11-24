@@ -12,6 +12,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -184,6 +185,17 @@ class MatchingEngineTest {
                 new Trade(3, 1, 50, 15000, NOW),
                 new Trade(3, 2, 20, 15000, NOW)), trades);
         assertEquals(new Order(2, Side.SELL, 30, 15000), book.bestAsk().orElseThrow());
+        assertTrue(book.bestBid().isEmpty());
+    }
+
+    @Test
+    void cancelRemovesRestingOrder() {
+        engine.submit(new Order(1, Side.BUY, 10, 100));
+
+        Optional<Order> cancelled = engine.cancel(1);
+
+        assertTrue(cancelled.isPresent());
+        assertEquals(1, cancelled.get().id());
         assertTrue(book.bestBid().isEmpty());
     }
 }

@@ -45,6 +45,10 @@ public class MatchingEngine {
         return (trades);
     }
 
+    public Optional<Order> cancel(long id) {
+        return book.cancel(id);                 // the book owns its data; the engine only routes
+    }
+
     private Optional<Order> bestOpposite(Side side) {
         return (switch (side) {
             case BUY -> book.bestAsk();
