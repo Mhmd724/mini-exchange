@@ -40,14 +40,14 @@ public class CommandExecutor {
         for (Trade trade : trades) {
             replies.add(formatTrade(trade));
         }
-        return (replies);
+        return replies;
     }
 
     private List<String> cancel(CancelOrder command) {
         String reply = engine.cancel(command.orderId())
                 .map(order -> "CANCELLED " + order.id())
                 .orElse("UNKNOWN " + command.orderId());
-        return (List.of(reply));
+        return List.of(reply);
     }
 
     private List<String> showBook() {
@@ -62,15 +62,15 @@ public class CommandExecutor {
             lines.add(formatLevel("BID", level));
         }
         lines.add("END");
-        return (lines);
+        return lines;
     }
 
     private String formatTrade(Trade trade) {
-        return ("TRADE " + trade.buyOrderId() + " " + trade.sellOrderId()
-                + " " + trade.quantity() + " " + trade.price());
+        return "TRADE " + trade.buyOrderId() + " " + trade.sellOrderId()
+                + " " + trade.quantity() + " " + trade.price();
     }
 
     private String formatLevel(String side, PriceLevel level) {
-        return (side + " " + level.quantity() + "@" + level.price());
+        return side + " " + level.quantity() + "@" + level.price();
     }
 }

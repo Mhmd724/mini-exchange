@@ -43,29 +43,29 @@ public class MatchingEngine {
         if (remaining > 0) {
             book.add(incoming.withQuantity(remaining));      // the leftover rests
         }
-        return (trades);
+        return trades;
     }
 
     public Optional<Order> cancel(long id) {
-        return (book.cancel(id));                 // the book owns its data; the engine only routes
+        return book.cancel(id);                 // the book owns its data; the engine only routes
     }
 
     public BookDepth depth() {
-        return (book.depth());
+        return book.depth();
     }
 
     private Optional<Order> bestOpposite(Side side) {
-        return (switch (side) {
+        return switch (side) {
             case BUY -> book.bestAsk();
             case SELL -> book.bestBid();
-        });
+        };
     }
 
     private boolean crosses(Order incoming, Order resting) {
-        return (switch (incoming.side()) {
+        return switch (incoming.side()) {
             case BUY -> incoming.price() >= resting.price();
             case SELL -> incoming.price() <= resting.price();
-        });
+        };
     }
 
     private void fillBestOpposite(Side side, long quantity) {
@@ -79,6 +79,6 @@ public class MatchingEngine {
         Order buyer = incoming.side() == Side.BUY ? incoming : resting;
         Order seller = incoming.side() == Side.SELL ? incoming : resting;
 
-        return (new Trade(buyer.id(), seller.id(), quantity, resting.price(), clock.instant()));
+        return new Trade(buyer.id(), seller.id(), quantity, resting.price(), clock.instant());
     }
 }

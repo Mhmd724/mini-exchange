@@ -13,11 +13,11 @@ public class OrderBook {
     }
 
     public Optional<Order> bestBid() {
-        return (bids.best());
+        return bids.best();
     }
 
     public Optional<Order> bestAsk() {
-        return (asks.best());
+        return asks.best();
     }
 
     public void fillBestBid(long quantity) {
@@ -29,7 +29,7 @@ public class OrderBook {
     }
 
     public Optional<Order> cancel(long id) {
-        return (bids.cancel(id).or(() -> asks.cancel(id)));
+        return bids.cancel(id).or(() -> asks.cancel(id));
     }
 
     public BookDepth depth() {
@@ -37,9 +37,9 @@ public class OrderBook {
     }
 
     private BookSide sideFor(Side side) {
-        return (switch (side) {
+        return switch (side) {
             case BUY -> bids;
             case SELL -> asks;
-        });
+        };
     }
 }

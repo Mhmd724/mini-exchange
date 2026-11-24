@@ -31,9 +31,9 @@ class BookSide {
 
     Optional<Order> best() {
         if (levels.isEmpty()) {
-            return (Optional.empty());
+            return Optional.empty();
         }
-        return (Optional.of(levels.firstEntry().getValue().peekFirst()));
+        return Optional.of(levels.firstEntry().getValue().peekFirst());
     }
 
     void fillBest(long quantity) {
@@ -54,7 +54,7 @@ class BookSide {
     Optional<Order> cancel(long id) {
         Long price = priceById.get(id);
         if (price == null) {
-            return (Optional.empty());
+            return Optional.empty();
         }
 
         Deque<Order> queue = levels.get(price);
@@ -67,10 +67,10 @@ class BookSide {
                     levels.remove(price);
                 }
                 priceById.remove(id);
-                return (Optional.of(order));
+                return Optional.of(order);
             }
         }
-        return (Optional.empty());
+        return Optional.empty();
     }
 
     List<PriceLevel> depth() {
@@ -82,7 +82,7 @@ class BookSide {
             }
             depth.add(new PriceLevel(level.getKey(), total));
         }
-        return (depth);
+        return depth;
     }
 
     private void removeBest() {
@@ -101,6 +101,6 @@ class BookSide {
         if (levels.isEmpty()) {
             throw new IllegalStateException("no order to " + action);
         }
-        return (levels.firstEntry());
+        return levels.firstEntry();
     }
 }
