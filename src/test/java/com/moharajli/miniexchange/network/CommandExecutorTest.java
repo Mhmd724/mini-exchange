@@ -27,42 +27,42 @@ class CommandExecutorTest {
 
     @Test
     void placeIsAcceptedWithNewId() {
-        assertEquals(List.of("ACCEPTED 1"), executor.execute(new PlaceOrder(Side.BUY, 100, 15000)));
+        assertEquals(List.of("ACCEPTED 1"), executor.execute(new PlaceOrder(Side.BUY, 100, 15000), 1));
     }
 
     @Test
     void placeReportsTrades() {
-        executor.execute(new PlaceOrder(Side.SELL, 100, 15000));
+        executor.execute(new PlaceOrder(Side.SELL, 100, 15000), 1);
 
-        List<String> replies = executor.execute(new PlaceOrder(Side.BUY, 100, 15000));
+        List<String> replies = executor.execute(new PlaceOrder(Side.BUY, 100, 15000), 1);
 
         assertEquals(List.of("ACCEPTED 2", "TRADE 2 1 100 15000"), replies);
     }
 
     @Test
     void cancelKnownOrder() {
-        executor.execute(new PlaceOrder(Side.BUY, 100, 15000));
+        executor.execute(new PlaceOrder(Side.BUY, 100, 15000), 1);
 
-        assertEquals(List.of("CANCELLED 1"), executor.execute(new CancelOrder(1)));
+        assertEquals(List.of("CANCELLED 1"), executor.execute(new CancelOrder(1), 1));
     }
 
     @Test
     void cancelUnknownOrder() {
-        assertEquals(List.of("UNKNOWN 99"), executor.execute(new CancelOrder(99)));
+        assertEquals(List.of("UNKNOWN 99"), executor.execute(new CancelOrder(99), 1));
     }
 
     @Test
     void showEmptyBook() {
-        assertEquals(List.of("BOOK", "END"), executor.execute(new ShowBook()));
+        assertEquals(List.of("BOOK", "END"), executor.execute(new ShowBook(), 1));
     }
 
     @Test
     void showBookAsLadder() {
-        executor.execute(new PlaceOrder(Side.BUY, 100, 15000));
-        executor.execute(new PlaceOrder(Side.BUY, 50, 15000));
-        executor.execute(new PlaceOrder(Side.BUY, 80, 14900));
-        executor.execute(new PlaceOrder(Side.SELL, 50, 15100));
-        executor.execute(new PlaceOrder(Side.SELL, 30, 15200));
+        executor.execute(new PlaceOrder(Side.BUY, 100, 15000), 1);
+        executor.execute(new PlaceOrder(Side.BUY, 50, 15000), 1);
+        executor.execute(new PlaceOrder(Side.BUY, 80, 14900), 1);
+        executor.execute(new PlaceOrder(Side.SELL, 50, 15100), 1);
+        executor.execute(new PlaceOrder(Side.SELL, 30, 15200), 1);
 
         assertEquals(List.of(
                 "BOOK",
@@ -70,6 +70,13 @@ class CommandExecutorTest {
                 "ASK 50@15100",
                 "BID 150@15000",
                 "BID 80@14900",
-                "END"), executor.execute(new ShowBook()));
+                "END"), executor.execute(new ShowBook(), 1));
+    }
+
+    @Test
+    void cancelByOtherOwnerIsUnknown() {
+        executor.execute(new PlaceOrder(Side.BUY, 100, 15000), 1);
+
+        assertEquals(List.of("UNKNOWN 1"), executor.execute(new CancelOrder(1), 2));
     }
 }

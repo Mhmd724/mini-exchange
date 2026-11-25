@@ -51,7 +51,7 @@ class BookSide {
         }
     }
 
-    Optional<Order> cancel(long id) {
+    Optional<Order> cancel(long id, long ownerId) {
         Long price = priceById.get(id);
         if (price == null) {
             return Optional.empty();
@@ -62,6 +62,9 @@ class BookSide {
         while (it.hasNext()) {
             Order order = it.next();
             if (order.id() == id) {
+                if (order.ownerId() != ownerId) {
+                    return Optional.empty();
+                }
                 it.remove();
                 if (queue.isEmpty()) {
                     levels.remove(price);

@@ -23,17 +23,17 @@ public class CommandExecutor {
         this.ids = ids;
     }
 
-    public List<String> execute(Command command) {
+    public List<String> execute(Command command, long ownerId) {
         return switch (command) {
-            case PlaceOrder place -> place(place);
-            case CancelOrder cancel -> cancel(cancel);
+            case PlaceOrder place -> place(place, ownerId);
+            case CancelOrder cancel -> cancel(cancel, ownerId);
             case ShowBook show -> showBook();
         };
     }
 
-    private List<String> place(PlaceOrder command) {
+    private List<String> place(PlaceOrder command, long ownerId) {
         long id = ids.next();
-        List<Trade> trades = engine.submit(new Order(id, command.side(), command.quantity(), command.price()));
+        List<Trade> trades = engine.submit(new Order(id, ownerId, command.side(), command.quantity(), command.price()));
 
         List<String> replies = new ArrayList<>();
         replies.add("ACCEPTED " + id);
@@ -43,8 +43,8 @@ public class CommandExecutor {
         return replies;
     }
 
-    private List<String> cancel(CancelOrder command) {
-        String reply = engine.cancel(command.orderId())
+    private List<String> cancel(CancelOrder command, long ownerId) {
+        String reply = engine.cancel(command.orderId(), ownerId)
                 .map(order -> "CANCELLED " + order.id())
                 .orElse("UNKNOWN " + command.orderId());
         return List.of(reply);

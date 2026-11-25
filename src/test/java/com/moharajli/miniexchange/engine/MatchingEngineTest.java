@@ -32,7 +32,7 @@ class MatchingEngineTest {
 
     @Test
     void orderRestsWhenBookIsEmpty() {
-        Order order = new Order(1, Side.BUY, 100, 15000);
+        Order order = new Order(1, 1, Side.BUY, 100, 15000);
 
         List<Trade> trades = engine.submit(order);
 
@@ -42,8 +42,8 @@ class MatchingEngineTest {
 
     @Test
     void buyMatchesRestingSell() {
-        Order sell = new Order(1, Side.SELL, 100, 15000);
-        Order buy = new Order(2, Side.BUY, 100, 15000);
+        Order sell = new Order(1, 1, Side.SELL, 100, 15000);
+        Order buy = new Order(2, 1, Side.BUY, 100, 15000);
 
         engine.submit(sell);
 
@@ -59,8 +59,8 @@ class MatchingEngineTest {
 
     @Test
     void sellMatchesRestingBuy() {
-        Order sell = new Order(1, Side.SELL, 100, 15000);
-        Order buy = new Order(2, Side.BUY, 100, 15000);
+        Order sell = new Order(1, 1, Side.SELL, 100, 15000);
+        Order buy = new Order(2, 1, Side.BUY, 100, 15000);
 
         engine.submit(buy);
 
@@ -76,8 +76,8 @@ class MatchingEngineTest {
 
     @Test
     void tradeUsesRestingPrice() {
-        Order sell = new Order(1, Side.SELL, 100, 15000);
-        Order buy = new Order(2, Side.BUY, 100, 15100);
+        Order sell = new Order(1, 1, Side.SELL, 100, 15000);
+        Order buy = new Order(2, 1, Side.BUY, 100, 15100);
 
         engine.submit(sell);
 
@@ -93,9 +93,9 @@ class MatchingEngineTest {
 
     @Test
     void noTradeWhenPricesDoNotCross() {
-        Order firstSell = new Order(1, Side.SELL, 100, 15000);
-        Order secondSell = new Order(2, Side.SELL, 100, 15100);
-        Order buy = new Order(3, Side.BUY, 100, 14900);
+        Order firstSell = new Order(1, 1, Side.SELL, 100, 15000);
+        Order secondSell = new Order(2, 1, Side.SELL, 100, 15100);
+        Order buy = new Order(3, 1, Side.BUY, 100, 14900);
 
         engine.submit(firstSell);
         engine.submit(secondSell);
@@ -110,22 +110,22 @@ class MatchingEngineTest {
 
     @Test
     void incomingSmallerPartiallyFillsResting() {
-        Order sell = new Order(1, Side.SELL, 100, 15000);
-        Order buy = new Order(2, Side.BUY, 40, 15000);
+        Order sell = new Order(1, 1, Side.SELL, 100, 15000);
+        Order buy = new Order(2, 1, Side.BUY, 40, 15000);
 
         engine.submit(sell);
 
         List<Trade> trades = engine.submit(buy);
 
         assertEquals(List.of(new Trade(2, 1, 40, 15000, NOW)), trades);
-        assertEquals(new Order(1, Side.SELL, 60, 15000), book.bestAsk().orElseThrow());
+        assertEquals(new Order(1, 1, Side.SELL, 60, 15000), book.bestAsk().orElseThrow());
         assertTrue(book.bestBid().isEmpty());
     }
 
     @Test
     void incomingLargerRestsRemainder() {
-        Order sell = new Order(1, Side.SELL, 100, 15000);
-        Order buy = new Order(2, Side.BUY, 150, 15000);
+        Order sell = new Order(1, 1, Side.SELL, 100, 15000);
+        Order buy = new Order(2, 1, Side.BUY, 150, 15000);
 
         engine.submit(sell);
 
@@ -133,14 +133,14 @@ class MatchingEngineTest {
 
         assertEquals(List.of(new Trade(2, 1, 100, 15000, NOW)), trades);
         assertTrue(book.bestAsk().isEmpty());
-        assertEquals(new Order(2, Side.BUY, 50, 15000), book.bestBid().orElseThrow());
+        assertEquals(new Order(2, 1, Side.BUY, 50, 15000), book.bestBid().orElseThrow());
     }
 
     @Test
     void incomingSweepsMultipleLevels() {
-        Order cheaper = new Order(1, Side.SELL, 60, 15000);
-        Order pricier = new Order(2, Side.SELL, 40, 15100);
-        Order buy = new Order(3, Side.BUY, 100, 15100);
+        Order cheaper = new Order(1, 1, Side.SELL, 60, 15000);
+        Order pricier = new Order(2, 1, Side.SELL, 40, 15100);
+        Order buy = new Order(3, 1, Side.BUY, 100, 15100);
 
         engine.submit(cheaper);
         engine.submit(pricier);
@@ -156,9 +156,9 @@ class MatchingEngineTest {
 
     @Test
     void sweepStopsAtLimitPrice() {
-        Order cheaper = new Order(1, Side.SELL, 60, 15000);
-        Order tooExpensive = new Order(2, Side.SELL, 40, 15200);
-        Order buy = new Order(3, Side.BUY, 100, 15100);
+        Order cheaper = new Order(1, 1, Side.SELL, 60, 15000);
+        Order tooExpensive = new Order(2, 1, Side.SELL, 40, 15200);
+        Order buy = new Order(3, 1, Side.BUY, 100, 15100);
 
         engine.submit(cheaper);
         engine.submit(tooExpensive);
@@ -167,14 +167,14 @@ class MatchingEngineTest {
 
         assertEquals(List.of(new Trade(3, 1, 60, 15000, NOW)), trades);
         assertEquals(tooExpensive, book.bestAsk().orElseThrow());
-        assertEquals(new Order(3, Side.BUY, 40, 15100), book.bestBid().orElseThrow());
+        assertEquals(new Order(3, 1, Side.BUY, 40, 15100), book.bestBid().orElseThrow());
     }
 
     @Test
     void sameLevelFillsInTimeOrder() {
-        Order first = new Order(1, Side.SELL, 50, 15000);
-        Order second = new Order(2, Side.SELL, 50, 15000);
-        Order buy = new Order(3, Side.BUY, 70, 15000);
+        Order first = new Order(1, 1, Side.SELL, 50, 15000);
+        Order second = new Order(2, 1, Side.SELL, 50, 15000);
+        Order buy = new Order(3, 1, Side.BUY, 70, 15000);
 
         engine.submit(first);
         engine.submit(second);
@@ -184,15 +184,15 @@ class MatchingEngineTest {
         assertEquals(List.of(
                 new Trade(3, 1, 50, 15000, NOW),
                 new Trade(3, 2, 20, 15000, NOW)), trades);
-        assertEquals(new Order(2, Side.SELL, 30, 15000), book.bestAsk().orElseThrow());
+        assertEquals(new Order(2, 1, Side.SELL, 30, 15000), book.bestAsk().orElseThrow());
         assertTrue(book.bestBid().isEmpty());
     }
 
     @Test
     void cancelRemovesRestingOrder() {
-        engine.submit(new Order(1, Side.BUY, 10, 100));
+        engine.submit(new Order(1, 1, Side.BUY, 10, 100));
 
-        Optional<Order> cancelled = engine.cancel(1);
+        Optional<Order> cancelled = engine.cancel(1, 1);
 
         assertTrue(cancelled.isPresent());
         assertEquals(1, cancelled.get().id());

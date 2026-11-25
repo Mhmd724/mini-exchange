@@ -28,8 +28,8 @@ public class OrderBook {
         asks.fillBest(quantity);
     }
 
-    public Optional<Order> cancel(long id) {
-        return bids.cancel(id).or(() -> asks.cancel(id));
+    public Optional<Order> cancel(long id, long ownerId) {
+        return bids.cancel(id, ownerId).or(() -> asks.cancel(id, ownerId));
     }
 
     public BookDepth depth() {

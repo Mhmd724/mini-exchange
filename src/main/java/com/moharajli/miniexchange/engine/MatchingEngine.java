@@ -46,8 +46,8 @@ public class MatchingEngine {
         return trades;
     }
 
-    public Optional<Order> cancel(long id) {
-        return book.cancel(id);                 // the book owns its data; the engine only routes
+    public Optional<Order> cancel(long id, long ownerId) {
+        return book.cancel(id, ownerId);                 // the book owns its data; the engine only routes
     }
 
     public BookDepth depth() {

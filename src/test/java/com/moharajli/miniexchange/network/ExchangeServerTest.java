@@ -23,81 +23,96 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class ExchangeServerTest {
 
-	private ExchangeServer server;
-	private Thread serverThread;
+    private ExchangeServer server;
+    private Thread serverThread;
 
-	@BeforeEach
-	void startServer() throws IOException {
-		MatchingEngine engine = new MatchingEngine(new OrderBook(), Clock.fixed(Instant.EPOCH, ZoneOffset.UTC));
-		CommandExecutor executor = new CommandExecutor(engine, new IdGenerator());
-		server = new ExchangeServer(0, new CommandParser(), executor);
-		serverThread = new Thread(server::serve);
-		serverThread.start();
-	}
+    @BeforeEach
+    void startServer() throws IOException {
+        MatchingEngine engine = new MatchingEngine(new OrderBook(), Clock.fixed(Instant.EPOCH, ZoneOffset.UTC));
+        CommandExecutor executor = new CommandExecutor(engine, new IdGenerator());
+        server = new ExchangeServer(0, new CommandParser(), executor);
+        serverThread = new Thread(server::serve);
+        serverThread.start();
+    }
 
-	@AfterEach
-	void stopServer() throws Exception {
-		server.close();
-		serverThread.join(2000);
-	}
+    @AfterEach
+    void stopServer() throws Exception {
+        server.close();
+        serverThread.join(2000);
+    }
 
-	@Test
-	void placesOrderOverTcp() throws IOException {
-		try (TestClient client = new TestClient(server.port())) {
-			client.send("BUY 100 15000");
+    @Test
+    void placesOrderOverTcp() throws IOException {
+        try (TestClient client = new TestClient(server.port())) {
+            client.send("BUY 100 15000");
 
-			assertEquals("ACCEPTED 1", client.read());
-		}
-	}
+            assertEquals("ACCEPTED 1", client.read());
+        }
+    }
 
-	@Test
-	void invalidCommandGetsError() throws IOException {
-		try (TestClient client = new TestClient(server.port())) {
-			client.send("HELLO");
+    @Test
+    void invalidCommandGetsError() throws IOException {
+        try (TestClient client = new TestClient(server.port())) {
+            client.send("HELLO");
 
-			assertEquals("ERROR unknown command: HELLO", client.read());
-		}
-	}
+            assertEquals("ERROR unknown command: HELLO", client.read());
+        }
+    }
 
-	@Test
-	void twoClientsTrade() throws IOException {
-		try (TestClient seller = new TestClient(server.port());
-				TestClient buyer = new TestClient(server.port())) {
-			seller.send("SELL 100 15000");
-			assertEquals("ACCEPTED 1", seller.read());
+    @Test
+    void twoClientsTrade() throws IOException {
+        try (TestClient seller = new TestClient(server.port());
+                TestClient buyer = new TestClient(server.port())) {
+            seller.send("SELL 100 15000");
+            assertEquals("ACCEPTED 1", seller.read());
 
-			buyer.send("BUY 100 15000");
+            buyer.send("BUY 100 15000");
 
-			assertEquals("ACCEPTED 2", buyer.read());
-			assertEquals("TRADE 2 1 100 15000", buyer.read());
-		}
-	}
+            assertEquals("ACCEPTED 2", buyer.read());
+            assertEquals("TRADE 2 1 100 15000", buyer.read());
+        }
+    }
 
-	private static final class TestClient implements AutoCloseable {
+    private static final class TestClient implements AutoCloseable {
 
-		private final Socket socket;
-		private final BufferedReader in;
-		private final PrintWriter out;
+        private final Socket socket;
+        private final BufferedReader in;
+        private final PrintWriter out;
 
-		TestClient(int port) throws IOException {
-			socket = new Socket("localhost", port);
-			socket.setSoTimeout(2000);
-			in = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
-			out = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8), true);
-		}
+        TestClient(int port) throws IOException {
+            socket = new Socket("localhost", port);
+            socket.setSoTimeout(2000);
+            in = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
+            out = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8), true);
+        }
 
-		void send(String line) {
-			out.print(line + "\n");
-			out.flush();
-		}
+        void send(String line) {
+            out.print(line + "\n");
+            out.flush();
+        }
 
-		String read() throws IOException {
-			return in.readLine();
-		}
+        String read() throws IOException {
+            return in.readLine();
+        }
 
-		@Override
-		public void close() throws IOException {
-			socket.close();
-		}
-	}
+        @Override
+        public void close() throws IOException {
+            socket.close();
+        }
+    }
+
+    @Test
+    void otherClientCannotCancel() throws IOException {
+        try (TestClient owner = new TestClient(server.port());
+             TestClient other = new TestClient(server.port())) {
+            owner.send("SELL 100 15000");
+            assertEquals("ACCEPTED 1", owner.read());
+
+            other.send("CANCEL 1");
+            assertEquals("UNKNOWN 1", other.read());
+
+            owner.send("CANCEL 1");
+            assertEquals("CANCELLED 1", owner.read());
+        }
+    }
 }
