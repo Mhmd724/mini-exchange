@@ -12,18 +12,18 @@ import java.time.Clock;
 
 public final class Main {
 
-	private static final int PORT = 9000;
+    private static final int PORT = 9000;
 
-	private Main() {
-	}
+    private Main() {
+    }
 
-	public static void main(String[] args) throws IOException {
-		MatchingEngine engine = new MatchingEngine(new OrderBook(), Clock.systemUTC());
-		CommandExecutor executor = new CommandExecutor(engine, new IdGenerator());
+    public static void main(String[] args) throws IOException {
+        MatchingEngine engine = new MatchingEngine(new OrderBook(), Clock.systemUTC());
+        CommandExecutor executor = new CommandExecutor(engine, new IdGenerator());
 
-		try (ExchangeServer server = new ExchangeServer(PORT, new CommandParser(), executor)) {
-			System.out.println("MiniExchange listening on port " + server.port());
-			server.serve();
-		}
-	}
+        try (ExchangeServer server = new ExchangeServer(PORT, new CommandParser(), executor)) {
+            System.out.println("MiniExchange listening on port " + server.port());
+            server.serve();
+        }
+    }
 }
