@@ -11,11 +11,14 @@ import java.util.Optional;
 import java.util.ArrayList;
 import java.util.List;
 import java.time.Clock;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Supplier;
 
 
 public class MatchingEngine {
     private final OrderBook book;
     private final Clock clock;
+    private final ReentrantLock lock = new ReentrantLock();
 
     public MatchingEngine(OrderBook book, Clock clock) {
         Validation.requireNotNull(book, "Order Book");
@@ -25,33 +28,15 @@ public class MatchingEngine {
     }
 
     public List<Trade> submit(Order incoming) {
-        long remaining = incoming.quantity();
-        List<Trade> trades = new ArrayList<>();
-
-        while (remaining > 0) {
-            Optional<Order> resting = bestOpposite(incoming.side());
-            if (resting.isEmpty() || !crosses(incoming, resting.get())) {
-                break ;
-            }
-
-            long quantity = Math.min(remaining, resting.get().quantity());
-            trades.add(createTrade(incoming, resting.get(), quantity));
-            fillBestOpposite(incoming.side(), quantity);
-            remaining -= quantity;
-        }
-
-        if (remaining > 0) {
-            book.add(incoming.withQuantity(remaining));      // the leftover rests
-        }
-        return trades;
+        return withLock(() -> match(incoming));
     }
 
     public Optional<Order> cancel(long id, long ownerId) {
-        return book.cancel(id, ownerId);                 // the book owns its data; the engine only routes
+        return withLock(() -> book.cancel(id, ownerId));                 // the book owns its data; the engine only routes
     }
 
     public BookDepth depth() {
-        return book.depth();
+        return withLock(book::depth);
     }
 
     private Optional<Order> bestOpposite(Side side) {
@@ -80,5 +65,36 @@ public class MatchingEngine {
         Order seller = incoming.side() == Side.SELL ? incoming : resting;
 
         return new Trade(buyer.id(), seller.id(), quantity, resting.price(), clock.instant());
+    }
+
+    private List<Trade> match(Order incoming) {
+        long remaining = incoming.quantity();
+        List<Trade> trades = new ArrayList<>();
+
+        while (remaining > 0) {
+            Optional<Order> resting = bestOpposite(incoming.side());
+            if (resting.isEmpty() || !crosses(incoming, resting.get())) {
+                break ;
+            }
+
+            long quantity = Math.min(remaining, resting.get().quantity());
+            trades.add(createTrade(incoming, resting.get(), quantity));
+            fillBestOpposite(incoming.side(), quantity);
+            remaining -= quantity;
+        }
+
+        if (remaining > 0) {
+            book.add(incoming.withQuantity(remaining));      // the leftover rests
+        }
+        return trades;
+    }
+
+    private <T> T withLock(Supplier<T> action) {
+        lock.lock();
+        try {
+            return action.get();
+        } finally {
+            lock.unlock();
+        }
     }
 }
