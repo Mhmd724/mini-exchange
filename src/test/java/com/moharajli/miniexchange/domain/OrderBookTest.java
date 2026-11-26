@@ -27,9 +27,9 @@ class OrderBookTest {
 
     @Test
     void bestBidIsHighestPrice() {
-        Order low = new Order(1, 1, Side.BUY, 100, 14900);
-        Order high = new Order(2, 1, Side.BUY, 100, 15100);
-        Order middle = new Order(3, 1, Side.BUY, 100, 15000);
+        Order low = new Order(1, new OwnerId(1), Side.BUY, 100, 14900);
+        Order high = new Order(2, new OwnerId(1), Side.BUY, 100, 15100);
+        Order middle = new Order(3, new OwnerId(1), Side.BUY, 100, 15000);
 
         book.add(low);
         book.add(high);
@@ -40,9 +40,9 @@ class OrderBookTest {
 
     @Test
     void bestAskIsLowestPrice() {
-        Order low = new Order(1, 1, Side.SELL, 100, 14900);
-        Order high = new Order(2, 1, Side.SELL, 100, 15100);
-        Order middle = new Order(3, 1, Side.SELL, 100, 15000);
+        Order low = new Order(1, new OwnerId(1), Side.SELL, 100, 14900);
+        Order high = new Order(2, new OwnerId(1), Side.SELL, 100, 15100);
+        Order middle = new Order(3, new OwnerId(1), Side.SELL, 100, 15000);
 
         book.add(high);
         book.add(low);
@@ -53,8 +53,8 @@ class OrderBookTest {
 
     @Test
     void samePriceEarliestFirst() {
-        Order first = new Order(1, 1, Side.BUY, 100, 15000);
-        Order second = new Order(2, 1, Side.BUY, 100, 15000);
+        Order first = new Order(1, new OwnerId(1), Side.BUY, 100, 15000);
+        Order second = new Order(2, new OwnerId(1), Side.BUY, 100, 15000);
 
         book.add(first);
         book.add(second);
@@ -64,7 +64,7 @@ class OrderBookTest {
 
     @Test
     void ordersGoToTheirOwnSide() {
-        Order order = new Order(1, 1, Side.BUY, 100, 15000);
+        Order order = new Order(1, new OwnerId(1), Side.BUY, 100, 15000);
 
         book.add(order);
 
@@ -73,8 +73,8 @@ class OrderBookTest {
 
     @Test
     void fullFillOfBestBidExposesNextBest() {
-        Order lower = new Order(1, 1, Side.BUY, 100, 15000);
-        Order higher = new Order(2, 1, Side.BUY, 100, 15100);
+        Order lower = new Order(1, new OwnerId(1), Side.BUY, 100, 15000);
+        Order higher = new Order(2, new OwnerId(1), Side.BUY, 100, 15100);
 
         book.add(lower);
         book.add(higher);
@@ -87,8 +87,8 @@ class OrderBookTest {
 
     @Test
     void fullFillExposesNextPriceLevel() {
-        Order cheaper = new Order(1, 1, Side.SELL, 100, 15000);
-        Order pricier = new Order(2, 1, Side.SELL, 100, 15100);
+        Order cheaper = new Order(1, new OwnerId(1), Side.SELL, 100, 15000);
+        Order pricier = new Order(2, new OwnerId(1), Side.SELL, 100, 15100);
 
         book.add(pricier);
         book.add(cheaper);
@@ -101,8 +101,8 @@ class OrderBookTest {
 
     @Test
     void fullFillKeepsTimePriority() {
-        Order first = new Order(1, 1, Side.SELL, 100, 15000);
-        Order second = new Order(2, 1, Side.SELL, 100, 15000);
+        Order first = new Order(1, new OwnerId(1), Side.SELL, 100, 15000);
+        Order second = new Order(2, new OwnerId(1), Side.SELL, 100, 15000);
 
         book.add(first);
         book.add(second);
@@ -115,8 +115,8 @@ class OrderBookTest {
 
     @Test
     void fullFillOfOnlyOrderEmptiesTheSide() {
-        Order sell = new Order(1, 1, Side.SELL, 100, 15000);
-        Order buy = new Order(2, 1, Side.BUY, 100, 15000);
+        Order sell = new Order(1, new OwnerId(1), Side.SELL, 100, 15000);
+        Order buy = new Order(2, new OwnerId(1), Side.BUY, 100, 15000);
 
         book.add(sell);
         book.add(buy);
@@ -136,29 +136,29 @@ class OrderBookTest {
 
     @Test
     void partialFillReducesBestOrder() {
-        Order buy = new Order(1, 1, Side.BUY, 100, 15000);
+        Order buy = new Order(1, new OwnerId(1), Side.BUY, 100, 15000);
 
         book.add(buy);
 
         book.fillBestBid(60);
-        assertEquals(new Order(1, 1, Side.BUY, 40, 15000), book.bestBid().orElseThrow());
+        assertEquals(new Order(1, new OwnerId(1), Side.BUY, 40, 15000), book.bestBid().orElseThrow());
     }
 
     @Test
     void partialFillKeepsTimePriority() {
-        Order first = new Order(1, 1, Side.BUY, 100, 15000);
-        Order second = new Order(2, 1, Side.BUY, 100, 15000);
+        Order first = new Order(1, new OwnerId(1), Side.BUY, 100, 15000);
+        Order second = new Order(2, new OwnerId(1), Side.BUY, 100, 15000);
 
         book.add(first);
         book.add(second);
 
         book.fillBestBid(60);
-        assertEquals(new Order(1, 1, Side.BUY, 40, 15000), book.bestBid().orElseThrow());
+        assertEquals(new Order(1, new OwnerId(1), Side.BUY, 40, 15000), book.bestBid().orElseThrow());
     }
 
     @Test
     void fillMoreThanBestFails() {
-        Order buy = new Order(1, 1, Side.BUY, 100, 15000);
+        Order buy = new Order(1, new OwnerId(1), Side.BUY, 100, 15000);
 
         book.add(buy);
 
@@ -168,10 +168,10 @@ class OrderBookTest {
 
         @Test
     void cancelRemovesRestingOrder() {
-        Order buy = new Order(1, 1, Side.BUY, 100, 15000);
+        Order buy = new Order(1, new OwnerId(1), Side.BUY, 100, 15000);
         book.add(buy);
 
-        Optional<Order> cancelled = book.cancel(1, 1);
+        Optional<Order> cancelled = book.cancel(1, new OwnerId(1));
 
         assertEquals(Optional.of(buy), cancelled);
         assertTrue(book.bestBid().isEmpty());
@@ -179,19 +179,19 @@ class OrderBookTest {
 
     @Test
     void cancelUnknownIdReturnsEmpty() {
-        assertTrue(book.cancel(99, 1).isEmpty());
+        assertTrue(book.cancel(99, new OwnerId(1)).isEmpty());
     }
 
     @Test
     void cancelMiddleOrderKeepsQueueOrder() {
-        Order first = new Order(1, 1, Side.BUY, 100, 15000);
-        Order second = new Order(2, 1, Side.BUY, 100, 15000);
-        Order third = new Order(3, 1, Side.BUY, 100, 15000);
+        Order first = new Order(1, new OwnerId(1), Side.BUY, 100, 15000);
+        Order second = new Order(2, new OwnerId(1), Side.BUY, 100, 15000);
+        Order third = new Order(3, new OwnerId(1), Side.BUY, 100, 15000);
         book.add(first);
         book.add(second);
         book.add(third);
 
-        book.cancel(2, 1);
+        book.cancel(2, new OwnerId(1));
 
         assertEquals(first, book.bestBid().orElseThrow());      //  #1 still first
         book.fillBestBid(100);
@@ -200,42 +200,42 @@ class OrderBookTest {
 
     @Test
     void cancelLastOrderAtPriceRemovesLevel() {
-        Order cheaper = new Order(1, 1, Side.SELL, 100, 15000);
-        Order pricier = new Order(2, 1, Side.SELL, 100, 15100);
+        Order cheaper = new Order(1, new OwnerId(1), Side.SELL, 100, 15000);
+        Order pricier = new Order(2, new OwnerId(1), Side.SELL, 100, 15100);
         book.add(cheaper);
         book.add(pricier);
 
-        book.cancel(1, 1);
+        book.cancel(1, new OwnerId(1));
 
         assertEquals(pricier, book.bestAsk().orElseThrow());
     }
 
     @Test
     void cancelAfterPartialFillReturnsRemaining() {
-        book.add(new Order(1, 1, Side.BUY, 100, 15000));
+        book.add(new Order(1, new OwnerId(1), Side.BUY, 100, 15000));
         book.fillBestBid(40);
 
-        Optional<Order> cancelled = book.cancel(1, 1);
+        Optional<Order> cancelled = book.cancel(1, new OwnerId(1));
 
-        assertEquals(Optional.of(new Order(1, 1, Side.BUY, 60, 15000)), cancelled);
+        assertEquals(Optional.of(new Order(1, new OwnerId(1), Side.BUY, 60, 15000)), cancelled);
         assertTrue(book.bestBid().isEmpty());
     }
 
     @Test
     void cancelAfterFullFillReturnsEmpty() {
-        book.add(new Order(1, 1, Side.BUY, 100, 15000));
+        book.add(new Order(1, new OwnerId(1), Side.BUY, 100, 15000));
         book.fillBestBid(100);
 
-        assertTrue(book.cancel(1, 1).isEmpty());
+        assertTrue(book.cancel(1, new OwnerId(1)).isEmpty());
     }
 
     @Test
     void cancelTwiceReturnsEmptySecondTime() {
-        book.add(new Order(1, 1, Side.BUY, 100, 15000));
+        book.add(new Order(1, new OwnerId(1), Side.BUY, 100, 15000));
 
-        book.cancel(1, 1);
+        book.cancel(1, new OwnerId(1));
 
-        assertTrue(book.cancel(1, 1).isEmpty());
+        assertTrue(book.cancel(1, new OwnerId(1)).isEmpty());
     }
 
     @Test
@@ -245,18 +245,18 @@ class OrderBookTest {
 
     @Test
     void depthSumsQuantitiesPerLevel() {
-        book.add(new Order(1, 1, Side.BUY, 100, 15000));
-        book.add(new Order(2, 1, Side.BUY, 50, 15000));
+        book.add(new Order(1, new OwnerId(1), Side.BUY, 100, 15000));
+        book.add(new Order(2, new OwnerId(1), Side.BUY, 50, 15000));
 
         assertEquals(List.of(new PriceLevel(15000, 150)), book.depth().bids());
     }
 
     @Test
     void depthListsLevelsBestFirst() {
-        book.add(new Order(1, 1, Side.BUY, 80, 14900));
-        book.add(new Order(2, 1, Side.BUY, 100, 15000));
-        book.add(new Order(3, 1, Side.SELL, 30, 15200));
-        book.add(new Order(4, 1, Side.SELL, 50, 15100));
+        book.add(new Order(1, new OwnerId(1), Side.BUY, 80, 14900));
+        book.add(new Order(2, new OwnerId(1), Side.BUY, 100, 15000));
+        book.add(new Order(3, new OwnerId(1), Side.SELL, 30, 15200));
+        book.add(new Order(4, new OwnerId(1), Side.SELL, 50, 15100));
 
         BookDepth depth = book.depth();
 
@@ -266,10 +266,10 @@ class OrderBookTest {
 
     @Test
     void cancelByOtherOwnerKeepsOrder() {
-        Order order = new Order(1, 1, Side.BUY, 100, 15000);
+        Order order = new Order(1, new OwnerId(1), Side.BUY, 100, 15000);
         book.add(order);
 
-        assertTrue(book.cancel(1, 2).isEmpty());
+        assertTrue(book.cancel(1, new OwnerId(2)).isEmpty());
         assertEquals(order, book.bestBid().orElseThrow());
     }
 }

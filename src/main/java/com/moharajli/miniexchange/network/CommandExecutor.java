@@ -4,6 +4,7 @@ import com.moharajli.miniexchange.common.IdGenerator;
 import com.moharajli.miniexchange.common.Validation;
 import com.moharajli.miniexchange.domain.BookDepth;
 import com.moharajli.miniexchange.domain.Order;
+import com.moharajli.miniexchange.domain.OwnerId;
 import com.moharajli.miniexchange.domain.PriceLevel;
 import com.moharajli.miniexchange.domain.Trade;
 import com.moharajli.miniexchange.engine.MatchingEngine;
@@ -23,7 +24,7 @@ public class CommandExecutor {
         this.ids = ids;
     }
 
-    public List<String> execute(Command command, long ownerId) {
+    public List<String> execute(Command command, OwnerId ownerId) {
         return switch (command) {
             case PlaceOrder place -> place(place, ownerId);
             case CancelOrder cancel -> cancel(cancel, ownerId);
@@ -31,7 +32,7 @@ public class CommandExecutor {
         };
     }
 
-    private List<String> place(PlaceOrder command, long ownerId) {
+    private List<String> place(PlaceOrder command, OwnerId ownerId) {
         long id = ids.next();
         List<Trade> trades = engine.submit(new Order(id, ownerId, command.side(), command.quantity(), command.price()));
 
@@ -43,7 +44,7 @@ public class CommandExecutor {
         return replies;
     }
 
-    private List<String> cancel(CancelOrder command, long ownerId) {
+    private List<String> cancel(CancelOrder command, OwnerId ownerId) {
         String reply = engine.cancel(command.orderId(), ownerId)
                 .map(order -> "CANCELLED " + order.id())
                 .orElse("UNKNOWN " + command.orderId());
@@ -66,7 +67,7 @@ public class CommandExecutor {
     }
 
     private String formatTrade(Trade trade) {
-        return "TRADE " + trade.buyOrderId() + " " + trade.sellOrderId()
+        return "TRADE " + trade.buy().orderId() + " " + trade.sell().orderId()
                 + " " + trade.quantity() + " " + trade.price();
     }
 

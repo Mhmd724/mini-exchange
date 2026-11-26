@@ -5,6 +5,7 @@ import com.moharajli.miniexchange.domain.Order;
 import com.moharajli.miniexchange.domain.OrderBook;
 import com.moharajli.miniexchange.domain.Side;
 import com.moharajli.miniexchange.domain.Trade;
+import com.moharajli.miniexchange.domain.OwnerId;
 
 import org.junit.jupiter.api.Test;
 
@@ -38,7 +39,7 @@ class MatchingEngineConcurrencyTest {
             Side side = t % 2 == 0 ? Side.BUY : Side.SELL;
             tasks.add(pool.submit(() -> {
                 for (int i = 0; i < ORDERS_PER_THREAD; i++) {
-                    List<Trade> trades = engine.submit(new Order(ids.incrementAndGet(), 1, side, 1, 15000));
+                    List<Trade> trades = engine.submit(new Order(ids.incrementAndGet(), new OwnerId(1), side, 1, 15000));
                     for (Trade trade : trades) {
                         traded.addAndGet(trade.quantity());
                     }

@@ -1,6 +1,7 @@
 package com.moharajli.miniexchange.network;
 
 import com.moharajli.miniexchange.common.Validation;
+import com.moharajli.miniexchange.domain.OwnerId;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -14,13 +15,13 @@ import java.util.List;
 public class ClientHandler implements Runnable {
 
     private final Socket socket;
-    private final long ownerId;
+    private final OwnerId ownerId;
     private final CommandParser parser;
     private final CommandExecutor executor;
 
-    public ClientHandler(Socket socket, long ownerId, CommandParser parser, CommandExecutor executor) {
+    public ClientHandler(Socket socket, OwnerId ownerId, CommandParser parser, CommandExecutor executor) {
         Validation.requireNotNull(socket, "Socket");
-        Validation.requirePositive(ownerId, "Owner id");
+        Validation.requireNotNull(ownerId, "Owner id");
         Validation.requireNotNull(parser, "Command parser");
         Validation.requireNotNull(executor, "Command executor");
         this.socket = socket;

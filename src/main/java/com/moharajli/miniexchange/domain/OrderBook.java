@@ -28,7 +28,7 @@ public class OrderBook {
         asks.fillBest(quantity);
     }
 
-    public Optional<Order> cancel(long id, long ownerId) {
+    public Optional<Order> cancel(long id, OwnerId ownerId) {
         return bids.cancel(id, ownerId).or(() -> asks.cancel(id, ownerId));
     }
 

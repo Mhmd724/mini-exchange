@@ -1,9 +1,11 @@
 package com.moharajli.miniexchange.engine;
 
 import com.moharajli.miniexchange.domain.Trade;
+import com.moharajli.miniexchange.domain.TradeSide;
 import com.moharajli.miniexchange.domain.OrderBook;
 import com.moharajli.miniexchange.domain.BookDepth;
 import com.moharajli.miniexchange.domain.Order;
+import com.moharajli.miniexchange.domain.OwnerId;
 import com.moharajli.miniexchange.domain.Side;
 import com.moharajli.miniexchange.common.Validation;
 
@@ -31,7 +33,7 @@ public class MatchingEngine {
         return withLock(() -> match(incoming));
     }
 
-    public Optional<Order> cancel(long id, long ownerId) {
+    public Optional<Order> cancel(long id, OwnerId ownerId) {
         return withLock(() -> book.cancel(id, ownerId));                 // the book owns its data; the engine only routes
     }
 
@@ -64,7 +66,7 @@ public class MatchingEngine {
         Order buyer = incoming.side() == Side.BUY ? incoming : resting;
         Order seller = incoming.side() == Side.SELL ? incoming : resting;
 
-        return new Trade(buyer.id(), seller.id(), quantity, resting.price(), clock.instant());
+        return new Trade(TradeSide.of(buyer), TradeSide.of(seller), quantity, resting.price(), clock.instant());
     }
 
     private List<Trade> match(Order incoming) {

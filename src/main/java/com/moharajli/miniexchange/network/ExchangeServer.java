@@ -2,6 +2,7 @@ package com.moharajli.miniexchange.network;
 
 import com.moharajli.miniexchange.common.IdGenerator;
 import com.moharajli.miniexchange.common.Validation;
+import com.moharajli.miniexchange.domain.OwnerId;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -33,7 +34,7 @@ public class ExchangeServer implements AutoCloseable {
         while (!serverSocket.isClosed()) {
             try {
                 Socket client = serverSocket.accept();
-                clients.submit(new ClientHandler(client, sessions.next(), parser, executor));
+                clients.submit(new ClientHandler(client, new OwnerId(sessions.next()), parser, executor));
             } catch (IOException e) {
                 if (!serverSocket.isClosed()) {
                     System.err.println("accept failed: " + e.getMessage());
