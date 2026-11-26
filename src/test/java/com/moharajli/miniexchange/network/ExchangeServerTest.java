@@ -29,8 +29,9 @@ class ExchangeServerTest {
     @BeforeEach
     void startServer() throws IOException {
         MatchingEngine engine = new MatchingEngine(new OrderBook(), Clock.fixed(Instant.EPOCH, ZoneOffset.UTC));
-        CommandExecutor executor = new CommandExecutor(engine, new IdGenerator());
-        server = new ExchangeServer(0, new CommandParser(), executor);
+        SessionRegistry sessions = new SessionRegistry();
+        CommandExecutor executor = new CommandExecutor(engine, new IdGenerator(), sessions);
+        server = new ExchangeServer(0, new CommandParser(), executor, sessions);
         serverThread = new Thread(server::serve);
         serverThread.start();
     }
@@ -113,6 +114,21 @@ class ExchangeServerTest {
 
             owner.send("CANCEL 1");
             assertEquals("CANCELLED 1", owner.read());
+        }
+    }
+
+    @Test
+    void bothSidesReceiveTheTrade() throws IOException {
+        try (TestClient seller = new TestClient(server.port());
+             TestClient buyer = new TestClient(server.port())) {
+            seller.send("SELL 100 15000");
+            assertEquals("ACCEPTED 1", seller.read());
+
+            buyer.send("BUY 100 15000");
+            assertEquals("ACCEPTED 2", buyer.read());
+            assertEquals("TRADE 2 1 100 15000", buyer.read());
+
+            assertEquals("TRADE 2 1 100 15000", seller.read());
         }
     }
 }

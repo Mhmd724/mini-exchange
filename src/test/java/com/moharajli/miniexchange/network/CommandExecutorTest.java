@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -19,11 +20,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class CommandExecutorTest {
 
     private CommandExecutor executor;
+    private final List<String> notifications = new ArrayList<>();
 
     @BeforeEach
     void setUp() {
         MatchingEngine engine = new MatchingEngine(new OrderBook(), Clock.fixed(Instant.EPOCH, ZoneOffset.UTC));
-        executor = new CommandExecutor(engine, new IdGenerator());
+        executor = new CommandExecutor(engine, new IdGenerator(),
+                (owner, line) -> notifications.add(owner.value() + " " + line));
     }
 
     @Test
@@ -79,5 +82,21 @@ class CommandExecutorTest {
         executor.execute(new PlaceOrder(Side.BUY, 100, 15000), new OwnerId(1));
 
         assertEquals(List.of("UNKNOWN 1"), executor.execute(new CancelOrder(1), new OwnerId(2)));
+    }
+
+    @Test
+    void tradeNotifiesRestingOwner() {
+        executor.execute(new PlaceOrder(Side.SELL, 100, 15000), new OwnerId(1));
+        executor.execute(new PlaceOrder(Side.BUY, 100, 15000), new OwnerId(2));
+
+        assertEquals(List.of("1 TRADE 2 1 100 15000"), notifications);
+    }
+
+    @Test
+    void selfTradeIsNotNotified() {
+        executor.execute(new PlaceOrder(Side.SELL, 100, 15000), new OwnerId(1));
+        executor.execute(new PlaceOrder(Side.BUY, 100, 15000), new OwnerId(1));
+
+        assertEquals(List.of(), notifications);
     }
 }

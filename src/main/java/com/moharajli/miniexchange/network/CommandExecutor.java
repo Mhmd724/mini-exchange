@@ -16,12 +16,15 @@ public class CommandExecutor {
 
     private final MatchingEngine engine;
     private final IdGenerator ids;
+    private final Notifier notifier;
 
-    public CommandExecutor(MatchingEngine engine, IdGenerator ids) {
+    public CommandExecutor(MatchingEngine engine, IdGenerator ids, Notifier notifier) {
         Validation.requireNotNull(engine, "Matching engine");
         Validation.requireNotNull(ids, "Id generator");
+        Validation.requireNotNull(notifier, "Notifier");
         this.engine = engine;
         this.ids = ids;
+        this.notifier = notifier;
     }
 
     public List<String> execute(Command command, OwnerId ownerId) {
@@ -39,7 +42,12 @@ public class CommandExecutor {
         List<String> replies = new ArrayList<>();
         replies.add("ACCEPTED " + id);
         for (Trade trade : trades) {
-            replies.add(formatTrade(trade));
+            String line = formatTrade(trade);
+            replies.add(line);
+            OwnerId counterparty = counterpartyOf(trade, ownerId);
+            if (!counterparty.equals(ownerId)) {
+                notifier.notifyOwner(counterparty, line);
+            }
         }
         return replies;
     }
@@ -64,6 +72,10 @@ public class CommandExecutor {
         }
         lines.add("END");
         return lines;
+    }
+
+    private OwnerId counterpartyOf(Trade trade, OwnerId ownerId) {
+        return trade.buy().owner().equals(ownerId) ? trade.sell().owner() : trade.buy().owner();
     }
 
     private String formatTrade(Trade trade) {

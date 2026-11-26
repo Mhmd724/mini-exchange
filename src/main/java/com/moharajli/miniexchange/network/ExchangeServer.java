@@ -14,15 +14,19 @@ public class ExchangeServer implements AutoCloseable {
 
     private final ServerSocket serverSocket;
     private final ExecutorService clients = Executors.newCachedThreadPool();
-    private final IdGenerator sessions = new IdGenerator();
+    private final IdGenerator ownerIds = new IdGenerator();
     private final CommandParser parser;
     private final CommandExecutor executor;
+    private final SessionRegistry sessions;
 
-    public ExchangeServer(int port, CommandParser parser, CommandExecutor executor) throws IOException {
+    public ExchangeServer(int port, CommandParser parser, CommandExecutor executor,
+                          SessionRegistry sessions) throws IOException {
         Validation.requireNotNull(parser, "Command parser");
         Validation.requireNotNull(executor, "Command executor");
+        Validation.requireNotNull(sessions, "Session registry");
         this.parser = parser;
         this.executor = executor;
+        this.sessions = sessions;
         this.serverSocket = new ServerSocket(port);
     }
 
@@ -34,7 +38,8 @@ public class ExchangeServer implements AutoCloseable {
         while (!serverSocket.isClosed()) {
             try {
                 Socket client = serverSocket.accept();
-                clients.submit(new ClientHandler(client, new OwnerId(sessions.next()), parser, executor));
+                OwnerId owner = new OwnerId(ownerIds.next());
+                clients.submit(new ClientHandler(client, owner, parser, executor, sessions));
             } catch (IOException e) {
                 if (!serverSocket.isClosed()) {
                     System.err.println("accept failed: " + e.getMessage());
