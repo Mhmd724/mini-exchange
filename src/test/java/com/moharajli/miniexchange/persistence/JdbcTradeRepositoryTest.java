@@ -44,17 +44,17 @@ class JdbcTradeRepositoryTest {
         try (InputStream in = JdbcTradeRepositoryTest.class.getResourceAsStream("/db/schema.sql")) {
             schema = new String(in.readAllBytes(), StandardCharsets.UTF_8);
         }
-        try (Connection connection = open(); Statement statement = connection.createStatement()) {
+        try (Connection connection = connectToContainer(); Statement statement = connection.createStatement()) {
             statement.execute(schema);
         }
     }
 
     @BeforeEach
     void setUp() throws SQLException {
-        try (Connection connection = open(); Statement statement = connection.createStatement()) {
+        try (Connection connection = connectToContainer(); Statement statement = connection.createStatement()) {
             statement.execute("TRUNCATE trades RESTART IDENTITY");
         }
-        repository = new JdbcTradeRepository(JdbcTradeRepositoryTest::open);
+        repository = new JdbcTradeRepository(JdbcTradeRepositoryTest::connectToContainer);
     }
 
     @AfterEach
@@ -69,7 +69,7 @@ class JdbcTradeRepositoryTest {
 
         repository.save(trade);
 
-        try (Connection connection = open();
+        try (Connection connection = connectToContainer();
              Statement statement = connection.createStatement();
              ResultSet row = statement.executeQuery("SELECT * FROM trades")) {
             assertTrue(row.next());
@@ -86,7 +86,7 @@ class JdbcTradeRepositoryTest {
 
     @Test
     void databaseRejectsNonPositiveQuantity() throws SQLException {
-        try (Connection connection = open(); Statement statement = connection.createStatement()) {
+        try (Connection connection = connectToContainer(); Statement statement = connection.createStatement()) {
             assertThrows(SQLException.class, () -> statement.executeUpdate("""
                     INSERT INTO trades (buy_order_id, sell_order_id, buy_owner_id, sell_owner_id,
                                         quantity, price, executed_at)
@@ -95,7 +95,7 @@ class JdbcTradeRepositoryTest {
         }
     }
 
-    private static Connection open() throws SQLException {
+    private static Connection connectToContainer() throws SQLException {
         return DriverManager.getConnection(POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword());
     }
 }
