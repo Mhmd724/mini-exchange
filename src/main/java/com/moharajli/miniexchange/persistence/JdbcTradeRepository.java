@@ -38,8 +38,11 @@ public final class JdbcTradeRepository implements TradeRepository, AutoCloseable
             statement.setObject(7, OffsetDateTime.ofInstant(trade.executedAt(), ZoneOffset.UTC));
             statement.executeUpdate();
         } catch (SQLException e) {
-            close();
-            throw new RepositoryException("could not save trade", e);
+            boolean retryable = isRetryable(e);
+            if (retryable) {
+                close();
+            }
+            throw new RepositoryException("could not save trade: " + e.getMessage(), e, retryable);
         }
     }
 
@@ -53,6 +56,12 @@ public final class JdbcTradeRepository implements TradeRepository, AutoCloseable
             }
             connection = null;
         }
+    }
+
+    private static boolean isRetryable(SQLException e) {
+        String state = e.getSQLState();
+        boolean badData = state != null && (state.startsWith("22") || state.startsWith("23"));
+        return !badData;
     }
 
     private Connection connection() throws SQLException {
